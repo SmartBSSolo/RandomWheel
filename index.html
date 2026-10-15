@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bob and Connie's Magical Random Wheel of Funness!</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 5px; }
+        .sub { color: #7f8c8d; margin-top: 0; margin-bottom: 25px; }
+        .box { display: flex; gap: 40px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .wheel-area { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .wrapper { position: relative; width: 400px; height: 400px; }
+        .arrow { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 30px solid #e74c3c; z-index: 10; }
+        canvas { border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.15); }
+        .spin { margin-top: 20px; padding: 12px 35px; font-size: 18px; font-weight: bold; color: white; background: #3498db; border: none; border-radius: 25px; cursor: pointer; }
+        .side { width: 350px; display: flex; flex-direction: column; }
+        .row { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; margin-bottom: 15px; }
+        .total { background: #2ecc71; color: white; padding: 4px 10px; border-radius: 15px; font-weight: bold; }
+        .list { max-height: 280px; overflow-y: auto; margin-bottom: 15px; overflow-x: hidden; }
+        .item { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; width: 100%; box-sizing: border-box; }
+        input[type="text"] { flex: 1; min-width: 0; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input[type="number"] { width: 70px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .del { background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .add { background: #2ecc71; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .win { margin-top: 15px; font-size: 20px; font-weight: bold; color: #2c3e50; min-height: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Bob and Connie's Magical Random Wheel of Funness!</h1>
+    <p class="sub">Enter your choices, assign sizes, and spin!</p>
+    <div class="box">
+        <div class="wheel-area">
+            <div class="arrow"></div>
+            <div class="wrapper"><canvas id="wheel" width="400" height="400"></canvas></div>
+            <button class="spin" id="btn" onclick="go()">SPIN THE WHEEL</button>
+            <div class="win" id="win display"></div>
+        </div>
+        <div class="side">
+            <div class="row"><h2>Slices</h2><div class="total" id="tot">Total: 50</div></div>
+            <div class="list" id="lst"></div>
+            <button class="add" onclick="addSlice('', 10)">+ Add Slice</button>
+        </div>
+    </div>
+    <script>
+        const el = document.getElementById('wheel'), ctx = el.getContext('2d');
+        const pal = ['#f1c40f', '#e67e22', '#e74c3c', '#9b59b6', '#3498db', '#1abc9c', '#2ecc71'];
+        let items = [{n:'Prize A', s:10}, {n:'Prize B', s:20}, {n:'Prize C', s:5}, {n:'Prize D', s:15}], ang = 0, busy = false;
+        
+        function setup() {
+            const list = document.getElementById('lst'); list.innerHTML = ''; let t = 0;
+            items.forEach((x, i) => { t += x.s;
+                const d = document.createElement('div'); d.className = 'item';
+                d.innerHTML = `<input type="text" value="${x.n}" oninput="upd(${i},'n',this.value)"><input type="number" value="${x.s}" oninput="upd(${i},'s',parseFloat(this.value)||0)"><button class="del" onclick="rem(${i})">✕</button>`;
+                list.appendChild(d);
+            });
+            document.getElementById('tot').innerText = 'Total: ' + t; draw();
+        }
+        function upd(i, f, v) { items[i][f] = v; if(f==='s') { let t=0; items.forEach(x=>t+=x.s); document.getElementById('tot').innerText = 'Total: '+t; } draw(); }
+        function addSlice(n, s) { items.push({n: n||'Slice '+ (items.length+1), s: s||10}); setup(); }
+        function rem(i) { if(items.length > 1) { items.splice(i, 1); setup(); } }
+        
+        function draw() {
+            const sum = items.reduce((a, b) => a + b.s, 0); if (sum <= 0) return;
+            const cx = 200, cy = 200, r = 190; ctx.clearRect(0, 0, 400, 400); let start = ang;
+            items.forEach((x, i) => { if (x.s <= 0) return;
+                const sweep = (x.s / sum) * Math.PI * 2;
+                ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, start, start + sweep); ctx.closePath();
+                ctx.fillStyle = pal[i % pal.length]; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.save(); ctx.translate(cx, cy); ctx.rotate(start + sweep / 2); ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = "bold 14px sans-serif";
+                ctx.fillText(x.n.length > 12 ? x.n.substring(0,10)+'...' : x.n, r - 15, 5); ctx.restore();
+                start += sweep;
+            });
+            ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#34495e'; ctx.lineWidth = 3; ctx.stroke();
+        }
+        function go() {
+            if (busy) return; const sum = items.reduce((a, b) => a + b.s, 0); if (sum <= 0) return;
+            busy = true; document.getElementById('btn').disabled = true; document.getElementById('win display').innerText = "Spinning...";
+            const rot = (Math.floor(Math.random() * 4) + 4) * Math.PI * 2 + Math.random() * Math.PI * 2, dur = 4000, startT = performance.now(), initA = ang;
+            function run(t) {
+                const p = Math.min((t - startT) / dur, 1), ease = 1 - Math.pow(1 - p, 3); ang = initA + (rot * ease); draw();
+                if (p < 1) requestAnimationFrame(run); else { busy = false; document.getElementById('btn').disabled = false; find(); }
+            }
+            requestAnimationFrame(run);
+        }
+        function find() {
+            const sum = items.reduce((a, b) => a + b.s, 0); let norm = ang % (Math.PI * 2); if (norm < 0) norm += Math.PI * 2;
+            let ptr = (3 * Math.PI / 2) - norm; if (ptr < 0) ptr += Math.PI * 2;
+            let cur = 0, w = "Unknown";
+            for (let i = 0; i < items.length; i++) {
+                const sweep = (items[i].s / sum) * Math.PI * 2;
+                if (ptr >= cur && ptr <= (cur + sweep)) { w = items[i].n; break; }
+                cur += sweep;
+            }
+            document.getElementById('win display').innerText = `🎉 Winner: ${w}!`;
+        }
+        setup();
+    </script>
+</body>
+</html>
