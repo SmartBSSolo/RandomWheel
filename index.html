@@ -56,7 +56,7 @@
             document.getElementById('tot').innerText = 'Total: ' + t; draw();
         }
         function upd(i, f, v) { items[i][f] = v; if(f==='s') { let t=0; items.forEach(x=>t+=x.s); document.getElementById('tot').innerText = 'Total: '+t; } draw(); }
-        function addSlice(n, s) { items.push({n: n||'Name '+ (items.length+1), s: s||10}); setup(); }
+        function addSlice(n, s) { items.push({n: n||'Name'+ (items.length+1), s: s||10}); setup(); }
         function rem(i) { if(items.length > 1) { items.splice(i, 1); setup(); } }
         
         function draw() {
